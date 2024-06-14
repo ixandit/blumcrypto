@@ -27,11 +27,11 @@ def fetch_tasks(authorization_token):
     if response.status_code == 200:
         return response.json()
     else:
-        print(f"Failed to fetch tasks. Status code: {response.status_code}")
+        print(f"Failed to fetch tasks. {response.json().get('message')}")
         return []
 
 def claim_task(authorization_token):
-    """Claim available tasks."""
+    """Claim available tasks and their subtasks."""
     base_url = 'https://game-domain.blum.codes/api/v1/tasks/'
     tasks = fetch_tasks(authorization_token)
     for task in tasks:
@@ -42,7 +42,19 @@ def claim_task(authorization_token):
             claimed_task = response.json().get('title', 'Unknown Task')
             print(f"Claimed task: {claimed_task}")
         else:
-            print(f"Failed to claim task {task.get('title', 'Unknown Title')}. Status code: {response.status_code}")
+            print(f"Failed to claim task {task.get('title', 'Unknown Title')}. {response.json().get('message')}")
+        # Check for subtasks and claim them if they exist
+        if 'subTasks' in task:
+            for subtask in task['subTasks']:
+                subtask_id = subtask['id']
+                subtask_claim_url = f"{base_url}{subtask_id}/claim"
+                subtask_response = requests.post(subtask_claim_url, headers=get_headers(authorization_token))
+                if subtask_response.status_code == 200:
+                    claimed_subtask = subtask_response.json().get('title', 'Unknown Subtask')
+                    print(f"Claimed subtask: {claimed_subtask}")
+                else:
+                    print(f"Failed to claim subtask {subtask.get('title', 'Unknown Title')}. {subtask_response.json().get('message')}")
+
 
 def claim_game_points(authorization_token, game_id, points):
     """Claim points for a game."""
@@ -52,7 +64,7 @@ def claim_game_points(authorization_token, game_id, points):
     if response.status_code == 200:
         return response.text
     else:
-        return f"Failed to claim game points. Status code: {response.status_code}"
+        return f"Failed to claim game points. {response.json().get('message')}"
 
 def generate_game_id(authorization_token):
     """Generate a new game ID."""
@@ -61,7 +73,7 @@ def generate_game_id(authorization_token):
     if response.status_code == 200:
         return response.json().get("gameId")
     else:
-        print(f"Failed to generate game ID. Status code: {response.status_code}")
+        print(f"Failed to generate game ID. {response.json().get('message')}")
         return None
 
 def get_balance(authorization_token):
@@ -71,7 +83,7 @@ def get_balance(authorization_token):
     if response.status_code == 200:
         return response.json().get("availableBalance")
     else:
-        print(f"Failed to get balance. Status code: {response.status_code}")
+        print(f"Failed to get balance. {response.json().get('message')}")
         return None
 
 def play_game(authorization_token, num_games):
@@ -100,13 +112,18 @@ def play_game(authorization_token, num_games):
                 time.sleep(0.5)
 
 def start_farming(authorization_token):
-    """Start farming tasks."""
+    """Claim farming points and start farming tasks."""
+    claim = "https://game-domain.blum.codes/api/v1/farming/claim"
+    claim_points = requests.post(claim, headers=get_headers(authorization_token))
+    if not claim_points.status_code == 200:
+        print(f"Failed to claim farming points. {claim_points.json().get('message')}")
+
     url = 'https://game-domain.blum.codes/api/v1/farming/start'
     response = requests.post(url, headers=get_headers(authorization_token))
     if response.status_code == 200:
-        print(response.json())
+        print(response.text)
     else:
-        print(f"Failed to start farming. Status code: {response.status_code}")
+        print(f"Failed to start farming. {response.json()}")
 
 def main():
     """Main function to parse arguments and execute the appropriate function."""
