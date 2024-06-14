@@ -37,7 +37,11 @@ def claim_task(authorization_token):
     tasks = fetch_tasks(authorization_token)
     for task in tasks:
         task_id = task['id']
+        start_url = f"{base_url}{task_id}/start"
         claim_url = f"{base_url}{task_id}/claim"
+        start = requests.post(start_url, headers=get_headers(authorization_token))
+        if start.status_code == 200:
+            print(f"Started task {task.get('title', 'Unknown Title')}")
         response = requests.post(claim_url, headers=get_headers(authorization_token))
         if response.status_code == 200:
             claimed_task = response.json().get('title', 'Unknown Task')
@@ -66,6 +70,15 @@ def claim_game_points(authorization_token, game_id, points):
         return response.text
     else:
         return f"Failed to claim game points. {response.json().get('message')}"
+
+def claim_fren_points(authorization_token):
+    """Claim points from friends"""
+    url = "https://gateway.blum.codes/v1/friends/claim"
+    response = requests.post(url, headers=get_headers(authorization_token))
+    if response.status_code == 200:
+        print(f" Claimed {response.json().get('claimBalance')} points")
+    else:
+        print(f"Failed to claim fren points. {response.json().get('message')}")
 
 def generate_game_id(authorization_token):
     """Generate a new game ID."""
@@ -114,11 +127,6 @@ def play_game(authorization_token, num_games):
 
 def start_farming(authorization_token):
     """Claim farming points and start farming tasks."""
-    claim = "https://game-domain.blum.codes/api/v1/farming/claim"
-    claim_points = requests.post(claim, headers=get_headers(authorization_token))
-    if not claim_points.status_code == 200:
-        print(f"Failed to claim farming points. {claim_points.json().get('message')}")
-
     url = 'https://game-domain.blum.codes/api/v1/farming/start'
     response = requests.post(url, headers=get_headers(authorization_token))
     if response.status_code == 200:
@@ -128,7 +136,12 @@ def start_farming(authorization_token):
         print(f'Started at: {start_time}\nEnding at: {end_time}\nEarning Rate: {data['earningsRate']}\nBalance: {data['balance']}')
 
     else:
-        print(f"Failed to start farming. {response.json()}")
+        print(f"Failed to start farming. {response.json().get('message')}")
+    claim = "https://game-domain.blum.codes/api/v1/farming/claim"
+    claim_points = requests.post(claim, headers=get_headers(authorization_token))
+    if not claim_points.status_code == 200:
+        print(f"Failed to claim farming points. {claim_points.json().get('message')}")
+
 
 def main():
     """Main function to parse arguments and execute the appropriate function."""
@@ -137,6 +150,7 @@ def main():
     parser.add_argument('--play-games', type=int, help='Number of games to play')
     parser.add_argument('--check-balance', action='store_true', help='Check balance')
     parser.add_argument('--claim-tasks', action='store_true', help='Claim tasks')
+    parser.add_argument('--claim-friends', action='store_true', help='Claim friends points')
     parser.add_argument('--start-farming', action='store_true', help='Start farming')
 
     args = parser.parse_args()
@@ -154,6 +168,9 @@ def main():
 
     if args.play_games:
         play_game(args.token, args.play_games)
+
+    if args.claim_friends:
+        claim_fren_points(args.token)
 
 if __name__ == "__main__":
     main()
