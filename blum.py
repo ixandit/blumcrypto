@@ -1,7 +1,6 @@
 import argparse
 import requests
 import time
-import random
 from datetime import datetime
 
 def get_headers(authorization_token):
@@ -108,10 +107,9 @@ def play_game(authorization_token, num_games):
             return
 
         game_id = generate_game_id(authorization_token)
+        points = 280
         if game_id is None:
             continue
-
-        points = random.randint(280, 500)
         print(f"Generated Game ID: {game_id} for {points} points")
 
         while True:
