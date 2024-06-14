@@ -2,6 +2,7 @@ import argparse
 import requests
 import time
 import random
+from datetime import datetime
 
 def get_headers(authorization_token):
     """Generate headers for requests."""
@@ -121,7 +122,11 @@ def start_farming(authorization_token):
     url = 'https://game-domain.blum.codes/api/v1/farming/start'
     response = requests.post(url, headers=get_headers(authorization_token))
     if response.status_code == 200:
-        print(response.text)
+        data = response.json()
+        start_time = datetime.fromtimestamp(data['startTime'] / 1000).strftime('%Y-%m-%d %H:%M:%S')
+        end_time = datetime.fromtimestamp(data['endTime'] / 1000).strftime('%Y-%m-%d %H:%M:%S')
+        print(f'Started at: {start_time}\nEnding at: {end_time}\nEarning Rate: {data['earningsRate']}\nBalance: {data['balance']}')
+
     else:
         print(f"Failed to start farming. {response.json()}")
 
